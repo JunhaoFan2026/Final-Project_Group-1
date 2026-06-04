@@ -1,5 +1,5 @@
 let grid;
-let w = 10;
+let w = 4;
 let cols, rows;
 
 function make2DArray(cols, rows){
@@ -59,7 +59,7 @@ function addSand(x, y) {
 }
 
 function draw() {
-  background(220);
+  background(0);
 
   for (let i = 0; i < cols; i++){
     for (let j = 0; j < rows; j++){
