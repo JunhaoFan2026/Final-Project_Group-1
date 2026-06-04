@@ -6,16 +6,17 @@ function make2DArray(cols, rows){
   let arr = new Array(cols);
   for (let i = 0;  i < arr.length; i++){
     arr[i] = new Array(rows);
-    for (let j = 0; j < arr[i].length; j++)
+    for (let j = 0; j < arr[i].length; j++){
       arr[i][j] = 0;
+    }
   }
   return arr;
 }
 
 function setup() {
   createCanvas(600, 800);
-  cols = width / w;
-  rows = height / w;
+  cols = floor(width / w);
+  rows = floor(height / w);
   grid = make2DArray(cols, rows);
 
   for (let i = 0; i < cols; i++){
@@ -26,10 +27,34 @@ function setup() {
 }
 
 function mouseDragged(){
-  let col = floor(mouseX / w);
-  let row = floor(mouseY / w);
-  if (col >= 0 && col <= cols - 1 && row >= 0 && row <= rows - 1){
-  grid[col][row] = 1;
+  addSand(mouseX,mouseY);
+}
+
+function mousePressed() {
+  addSand(mouseX, mouseY);
+}
+
+function addSand(x, y) {
+  let col = floor(x / w);
+  let row = floor(y / w);
+
+  let brushSize = 5;
+  let extent = floor(brushSize / 2);
+
+  for (let i = -extent; i <= extent; i++) {
+    for (let j = -extent; j <= extent; j++) {
+      let currentCol = col + i;
+      let currentRow = row + j;
+
+      if (
+        currentCol >= 0 &&
+        currentCol < cols &&
+        currentRow >= 0 &&
+        currentRow < rows
+      ) {
+        grid[currentCol][currentRow] = 1;
+      }
+    }
   }
 }
 
