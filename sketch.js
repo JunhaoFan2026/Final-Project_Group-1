@@ -1,6 +1,7 @@
 let grid;
 let w = 4;
 let cols, rows;
+let noiseStep = 0;
 
 function make2DArray(cols, rows){
   let arr = new Array(cols);
@@ -15,6 +16,8 @@ function make2DArray(cols, rows){
 
 function setup() {
   createCanvas(600, 800);
+  randomSeed(9103);
+  noiseSeed(9103);
   cols = floor(width / w);
   rows = floor(height / w);
   grid = make2DArray(cols, rows);
@@ -59,7 +62,7 @@ function addSand(x, y) {
 }
 
 function draw() {
-  background(0);
+  background(0, 120);
 
   for (let i = 0; i < cols; i++){
     for (let j = 0; j < rows; j++){
@@ -78,12 +81,17 @@ function draw() {
     for (let j = 0; j < rows; j++){
       let state = grid[i][j];
       if (state === 1){
+        if (j >= rows - 1) {
+          nextGrid[i][j] = 1;
+          continue;
+        }
+        
         let below = grid[i][j + 1];
 
-        let dir = 1;
-        if (random(1) < 0.5) {
-          dir *= -1;
-        }
+        let wind = noise(i * 0.1, j * 0.1, noiseStep);
+        let dir = wind > 0.5 ? 1 : -1;
+        if (random(1) < 0.1) dir = random(1) < 0.5 ? 1 : -1;
+
         let belowA, belowB;
         if (i + dir >= 0 && i + dir <= cols - 1){
           belowA = grid[i + dir][j + 1];
@@ -104,4 +112,5 @@ function draw() {
     }
   }
     grid = nextGrid;
+    noiseStep += 0.01;
 }
