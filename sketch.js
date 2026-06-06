@@ -8,6 +8,10 @@ let fft;
 let currentHue = 0;
 let targetHue = 0;
 
+// User input,
+let inputMode = "pour"; 
+let brushSize = 5;//make brushsize as the globa variable
+
 function make2DArray(cols, rows){
   let arr = new Array(cols);
   for (let i = 0;  i < arr.length; i++){
@@ -34,20 +38,30 @@ function setup() {
   fft.setInput(mic);
 }
 
+// User input
+// Make mouse input send to usersTool(), so I can add different interaction modes such as pour, disturb, and erase.
 function mouseDragged(){
-  addSand(mouseX,mouseY);
+  usersTool(mouseX,mouseY);
 }
 
 function mousePressed() {
-  addSand(mouseX, mouseY);
+  usersTool(mouseX, mouseY);
+}
+
+function usersTool(x ,y){
+  addSand(x ,y);
 }
 
 function addSand(x, y) {
   let col = floor(x / w);
   let row = floor(y / w);
+ 
+  //User input improvement:the brush becomes larger when the mouse move faster.
+  let mouseSpeed = dist(mouseX,mouseY, pmouseX, pmouseY);
+  let speedBoost = floor(constrain(mouseSpeed, 0, 30) / 6);
+  let dynamicBrushSize = brushSize + speedBoost;
 
-  let brushSize = 5;
-  let extent = floor(brushSize / 2);
+  let extent = floor(dynamicBrushSize / 2);
 
   for (let i = -extent; i <= extent; i++) {
     for (let j = -extent; j <= extent; j++) {
@@ -133,4 +147,28 @@ function draw() {
   }
     grid = nextGrid;
     noiseStep += 0.01;
+
+    drawInputInstructions();
+    drawBrushPreview();
+
+}
+
+function drawInputInstructions() {
+  fill(255);
+  noStroke();
+  textSize(12);
+  text("Mode: " + inputMode, 20, 30);
+  text("Brush size: " + brushSize, 20, 50);
+  text("drag slowly for fine sand, quickly for heavier sand", 20, 70);
+}
+
+function drawBrushPreview() {
+  let mouseSpeed = dist(mouseX, mouseY, pmouseX, pmouseY);
+  let speedBoost = floor(constrain(mouseSpeed, 0, 30) / 6);
+  let dynamicBrushSize = brushSize + speedBoost;
+
+  noFill();
+  stroke(255, 180);
+  strokeWeight(1);
+  circle(mouseX, mouseY, dynamicBrushSize * w);
 }
