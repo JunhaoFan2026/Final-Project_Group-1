@@ -160,6 +160,7 @@ function drawInputInstructions() {
   text("Mode: " + inputMode, 20, 30);
   text("Brush size: " + brushSize, 20, 50);
   text("drag slowly for fine sand, quickly for heavier sand", 20, 70);
+  text("Use + / - to change base brush size", 20, 90);
 }
 
 function drawBrushPreview() {
@@ -172,3 +173,12 @@ function drawBrushPreview() {
   strokeWeight(1);
   circle(mouseX, mouseY, dynamicBrushSize * w);
 }
+
+function keyPressed() {
+  if (key === '+' || key === '=') {
+    brushSize = min(brushSize + 1, 20);
+  } else if (key === '-') {
+    brushSize = max(brushSize - 1, 1);
+  }
+}
+
