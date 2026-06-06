@@ -3,6 +3,11 @@ let w = 4;
 let cols, rows;
 let noiseStep = 0;
 
+let mic;
+let fft;
+let currentHue = 0;
+let targetHue = 0;
+
 function make2DArray(cols, rows){
   let arr = new Array(cols);
   for (let i = 0;  i < arr.length; i++){
@@ -16,17 +21,17 @@ function make2DArray(cols, rows){
 
 function setup() {
   createCanvas(600, 800);
+  colorMode(HSB, 360, 100, 100);
   randomSeed(9103);
   noiseSeed(9103);
   cols = floor(width / w);
   rows = floor(height / w);
   grid = make2DArray(cols, rows);
 
-  for (let i = 0; i < cols; i++){
-    for (let j = 0; j < rows; j++){
-      grid[i][j] = 0;
-    }
-  }
+  mic = new p5.AudioIn();
+  mic.start();
+  fft = new p5.FFT(0.8, 1024);
+  fft.setInput(mic);
 }
 
 function mouseDragged(){
@@ -55,7 +60,7 @@ function addSand(x, y) {
         currentRow >= 0 &&
         currentRow < rows
       ) {
-        grid[currentCol][currentRow] = 1;
+        grid[currentCol][currentRow] = currentHue;
       }
     }
   }
@@ -64,15 +69,30 @@ function addSand(x, y) {
 function draw() {
   background(0, 120);
 
+  let spectrum = fft.analyze();
+  let weightedSum = 0;
+  let totalEnergy = 0;
+  for (let i = 0; i < spectrum.length; i++){
+    weightedSum += i * spectrum[i];
+    totalEnergy += spectrum[i];
+  }
+  if (totalEnergy > 0){
+    let centroid = weightedSum / totalEnergy;
+    targetHue = map(centroid, 0, spectrum.length, 0, 360);
+    targetHue = constrain(targetHue, 0, 360);
+    currentHue = lerp(currentHue, targetHue, 0.05);
+    noStroke();
+  }
+
   for (let i = 0; i < cols; i++){
     for (let j = 0; j < rows; j++){
-      noStroke();
-     if (grid[i][j] == 1){
-      fill(255);
-      let x = i * w;
-      let y = j * w;
-      square(x, y, w);
-     }
+      let sandHue = grid[i][j];
+      if (sandHue > 0){
+        fill(sandHue, 100, 100);
+        let x = i * w;
+        let y = j * w;
+        square(x, y, w);
+      }
     }
   }
 
@@ -80,9 +100,9 @@ function draw() {
   for (let i = 0; i < cols; i++){
     for (let j = 0; j < rows; j++){
       let state = grid[i][j];
-      if (state === 1){
+      if (state > 0){
         if (j >= rows - 1) {
-          nextGrid[i][j] = 1;
+          nextGrid[i][j] = state;
           continue;
         }
         
@@ -100,13 +120,13 @@ function draw() {
           belowB = grid[i - dir][j + 1];
         }
         if (below === 0){
-          nextGrid[i][j + 1] = 1;
+          nextGrid[i][j + 1] = state;
         } else if (belowA === 0) {
-          nextGrid[i + dir][j + 1] = 1;
+          nextGrid[i + dir][j + 1] = state;
         } else if (belowB === 0) {
-          nextGrid[i - dir][j + 1] = 1;
+          nextGrid[i - dir][j + 1] = state;
         } else {
-          nextGrid[i][j] = 1;
+          nextGrid[i][j] = state;
         }
       }
     }
