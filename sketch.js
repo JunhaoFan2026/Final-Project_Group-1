@@ -49,15 +49,23 @@ function mousePressed() {
   usersTool(mouseX, mouseY);
 }
 
-function usersTool(x ,y){
-  addSand(x ,y);
+function usersTool(x ,y){ // To run different interaction
+  if (inputMode === "pour"){
+    addSand(x ,y);
+  }
+  else if (inputMode === "disturb"){
+    disturbSand(x ,y);
+  }
+  else if (inputMode === "erase"){
+      eraseSand(x ,y);
+    }
 }
 
+//Pour tool: Slow mouse movement creates a finer sand stream, fast mouse movement increase poring area.
 function addSand(x, y) {
   let col = floor(x / w);
   let row = floor(y / w);
- 
-  //User input improvement:the brush becomes larger when the mouse move faster.
+
   let mouseSpeed = dist(mouseX,mouseY, pmouseX, pmouseY);
   let speedBoost = floor(constrain(mouseSpeed, 0, 30) / 6);
   let dynamicBrushSize = brushSize + speedBoost;
@@ -76,6 +84,71 @@ function addSand(x, y) {
         currentRow < rows
       ) {
         grid[currentCol][currentRow] = currentHue;
+      }
+    }
+  }
+}
+
+//Erase tool：Removes sand inside the slected brush area.
+function eraseSand(x, y){
+  let col = floor(x / w);
+  let row = floor(y / w);
+  
+  let extent = floor(brushSize / 2);
+  
+  for(let i = -extent; i <= extent; i++) {
+    for (let j = -extent; j <= extent; j++) {
+      let currentCol = col + i;
+      let currentRow = row + j;
+    
+    //Here is to check whether the slected cell is inside the frid.
+    if (
+      currentCol >= 0 &&
+      currentCol < cols &&
+      currentRow >= 0 &&
+      currentRow < rows
+    ){
+      grid[currentCol][currentRow] = 0;//Here is to change selected cell to 0 to remove the sand.
+      }
+    }
+  }
+}
+
+
+
+//Disturb tool: moves existing sand to nearby empty cellls.
+function disturbSand(x, y){
+  let col = floor(x / w);
+  let row = floor(y / w);
+
+  let extent = floor(brushSize / 2);
+
+  for (let i = -extent; i <= extent; i++){
+    for (let j = -extent; j <= extent; j++){
+      let currentCol = col + i;
+      let currentRow = row + j;
+
+      if (
+        currentCol >= 0 &&
+        currentCol < cols &&
+        currentRow >= 0 &&
+        currentRow < rows &&
+        grid[currentCol][currentRow] > 0
+      ){
+        let sandHue = grid[currentCol][currentRow];//:to save the color of sands before moving.
+        let newCol = currentCol + floor(random(-3, 4));
+        let newRow = currentRow + floor(random(-2, 3));//These steps is to slect nearby random grid position.
+
+        if (//only moving if the new position is empty& valid.
+          newCol >= 0 &&
+          newCol < cols &&
+          newRow >= 0 &&
+          newRow < rows &&
+          grid[newCol][newRow] === 0
+        ){
+          grid[currentCol][currentRow] = 0;
+          grid[newCol][newRow] = sandHue;
+        }
       }
     }
   }
@@ -162,30 +235,55 @@ function drawInputInstructions() {
   textSize(12);
   text("Mode: " + inputMode, 20, 30);
   text("Brush size: " + brushSize, 20, 50);
-  text("drag slowly for fine sand, quickly for heavier sand", 20, 70);
-  text("Use + / - to change base brush size", 20, 90);
-  text("Voice Frequency: " + floor(currentFreq) + " Hz", 20, 110);
-  text("Current Hue: " + floor(currentHue), 20, 130);
+  text("1: Pour | 2: Disturb | 3: Erase", 20, 70);
+  text("Drag slowly for fine sand, quickly for heavier sand", 20, 90);
+  text("Use + / - to change base brush size", 20, 110);
+  text("Voice Frequency: " + floor(currentFreq) + " Hz", 20, 130);
+  text("Current Hue: " + floor(currentHue), 20, 150);
 }
 
 function drawBrushPreview() {
-  let mouseSpeed = dist(mouseX, mouseY, pmouseX, pmouseY);
-  let speedBoost = floor(constrain(mouseSpeed, 0, 30) / 6);
-  let dynamicBrushSize = brushSize + speedBoost;
+  let previewBrushSize = brushSize;
 
+  //These let the pour tool only becomes larger when mouse moves faster.
+  if (inputMode === "pour"){
+    let mouseSpeed = dist(mouseX, mouseY, pmouseX, pmouseY);
+    let speedBoost = floor(constrain(mouseSpeed, 0, 30) / 6);
+    previewBrushSize += speedBoost;
+  }
+  
   noFill();
-  stroke(0, 0, 100, 50);
   strokeWeight(1);
-  circle(mouseX, mouseY, dynamicBrushSize * w);
+
+  //I wanna to use different colors to distinguish different tools.
+  if (inputMode === "pour"){
+    stroke(120, 30, 100);
+  } else if (inputMode === "disturb"){
+    stroke(45, 90, 100);
+  } else if (inputMode === "erase"){
+    stroke(0, 80, 100);
+  }
+
+  circle(mouseX, mouseY, previewBrushSize * w);
 }
 
+//Keyboard control:
 function keyPressed() {
   if (key === '+' || key === '=') {
     brushSize = min(brushSize + 1, 20);
   } else if (key === '-') {
     brushSize = max(brushSize - 1, 1);
   }
+  //Switch interaction modes:
+  if (key === "1"){
+    inputMode = "pour";
+  } else if (key === "2"){
+    inputMode = "disturb";
+  } else if (key === "3"){
+    inputMode = "erase";
+  }
 }
+
 function windowResized(){
   let oldGrid = grid;
   let oldCols = cols;
