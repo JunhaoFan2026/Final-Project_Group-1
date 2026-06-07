@@ -169,7 +169,7 @@ function draw() {
     let nyquist = sampleRate() / 2;
     let centroidFreq = centroid * nyquist / spectrum.length;
     currentFreq = centroidFreq;
-    targetHue = map(centroidFreq, 180, 400, 1, 360, true);
+    targetHue = map(centroidFreq, 180, 500, 1, 360, true);
     currentHue = lerp(currentHue, targetHue, 0.05);
     noStroke();
   }
