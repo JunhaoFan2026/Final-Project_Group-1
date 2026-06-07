@@ -8,6 +8,8 @@ let fft;
 let currentHue = 180;
 let targetHue = 180;
 let currentFreq = 0;
+let particles = [];
+let explodeMode = false;
 
 // User input,
 let inputMode = "pour"; 
@@ -177,7 +179,7 @@ function disturbSand(x, y){
 }
 
 function draw() {
-  background(0, 0, 20);
+  background(0, 0, 10, 0.12);
 
   let elapsed = millis() - startTime;
   let remaining = max(0, paintDuration - elapsed);
@@ -284,6 +286,29 @@ function draw() {
     drawInputInstructions(remaining);
     drawBrushPreview();
 
+    if (explodeMode) {
+
+      background(0, 0, 10, 0.2);
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+
+        let p = particles[i];
+
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.05;
+        p.life -= 1.2;
+
+        noStroke();
+        fill(p.hue, 100, 100, p.life);
+        circle(p.x, p.y, 3);
+
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+    }
+
 }
 
 function drawInputInstructions(remaining) {
@@ -304,6 +329,35 @@ function drawInputInstructions(remaining) {
   text("SPACE: end painting early", 20, 150);
   text("Voice Frequency: " + floor(currentFreq) + " Hz", 20, 170);
   text("Current Hue: " + floor(currentHue), 20, 190);
+}
+
+function triggerExplosion() {
+  particles = [];
+  explodeMode = true;
+
+  for (let i = 0; i < cols; i++) {
+    for (let j = 0; j < rows; j++) {
+
+      let cell = grid[i][j];
+
+      if (!isEmpty(cell)) {
+
+        let x = i * w;
+        let y = j * w;
+
+        particles.push({
+          x: x,
+          y: y,
+          vx: random(-2, 2),
+          vy: random(-3, 1),
+          hue: cell.hue,
+          life: 255
+        });
+
+        grid[i][j] = emptyCell();
+      }
+    }
+  }
 }
 
 function drawBrushPreview() {
@@ -348,6 +402,8 @@ function keyPressed() {
     inputMode = "disturb";
   } else if (key === "3"){
     inputMode = "erase";
+  } else if (key === 'f' || key === 'F') {
+    triggerExplosion();
   } else if (key === 'r' || key === 'R') {
     startTime = millis();
     paintingActive = true;
