@@ -229,9 +229,19 @@ function draw() {
         
         let below = grid[i][j + 1];
 
-        let wind = noise(i * 0.1, j * 0.1, noiseStep);
-        let dir = wind > 0.5 ? 1 : -1;
-        if (random(1) < 0.1) dir = random(1) < 0.5 ? 1 : -1;
+        let heightFactor = map(j, 0, rows, 1.5, 0.3);
+
+        let wind = noise(i * 0.03, j * 0.03, noiseStep);
+
+        wind *= heightFactor;
+
+        let dir = 0;
+
+        if (wind > 0.55){
+          dir = 1;
+        } else if (wind < 0.45){
+          dir = -1;
+        }
 
         let belowA = emptyCell();
         let belowB = emptyCell();
@@ -259,7 +269,7 @@ function draw() {
     }
   }
     grid = nextGrid;
-    noiseStep += 0.01;
+    noiseStep += 0.003;
 
     drawInputInstructions(remaining);
     drawBrushPreview();
