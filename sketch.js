@@ -5,8 +5,9 @@ let noiseStep = 0;
 
 let mic;
 let fft;
-let currentHue = 0;
-let targetHue = 0;
+let currentHue = 180;
+let targetHue = 180;
+let currentFreq = 0;
 
 // User input,
 let inputMode = "pour"; 
@@ -24,7 +25,7 @@ function make2DArray(cols, rows){
 }
 
 function setup() {
-  createCanvas(600, 800);
+  createCanvas(windowWidth, windowHeight);
   colorMode(HSB, 360, 100, 100);
   randomSeed(9103);
   noiseSeed(9103);
@@ -92,8 +93,10 @@ function draw() {
   }
   if (totalEnergy > 0){
     let centroid = weightedSum / totalEnergy;
-    targetHue = map(centroid, 0, spectrum.length, 0, 360);
-    targetHue = constrain(targetHue, 0, 360);
+    let nyquist = sampleRate() / 2;
+    let centroidFreq = centroid * nyquist / spectrum.length;
+    currentFreq = centroidFreq;
+    targetHue = map(centroidFreq, 180, 400, 1, 360, true);
     currentHue = lerp(currentHue, targetHue, 0.05);
     noStroke();
   }
@@ -161,6 +164,8 @@ function drawInputInstructions() {
   text("Brush size: " + brushSize, 20, 50);
   text("drag slowly for fine sand, quickly for heavier sand", 20, 70);
   text("Use + / - to change base brush size", 20, 90);
+  text("Voice Frequency: " + floor(currentFreq) + " Hz", 20, 110);
+  text("Current Hue: " + floor(currentHue), 20, 130);
 }
 
 function drawBrushPreview() {
@@ -169,7 +174,7 @@ function drawBrushPreview() {
   let dynamicBrushSize = brushSize + speedBoost;
 
   noFill();
-  stroke(255, 180);
+  stroke(0, 0, 100, 50);
   strokeWeight(1);
   circle(mouseX, mouseY, dynamicBrushSize * w);
 }
@@ -179,6 +184,20 @@ function keyPressed() {
     brushSize = min(brushSize + 1, 20);
   } else if (key === '-') {
     brushSize = max(brushSize - 1, 1);
+  }
+}
+function windowResized(){
+  let oldGrid = grid;
+  let oldCols = cols;
+  let oldRows = rows;
+  resizeCanvas(windowWidth, windowHeight);
+  cols = floor(width / w);
+  rows = floor(height / w);
+  grid = make2DArray(cols, rows);
+  for (let i = 0; i < min(oldCols, cols); i++){
+    for (let j = 0; j < min(oldRows, rows); j++){
+      grid[i][j] = oldGrid[i][j];
+    }
   }
 }
 
