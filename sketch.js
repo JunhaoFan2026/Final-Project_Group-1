@@ -263,7 +263,17 @@ function draw() {
         } else if (isEmpty(belowB)) {
           nextGrid[i - dir][j + 1] = fadedCell;
         } else {
-          nextGrid[i][j] = fadedCell;
+            if (
+              random(1) < 0.03 &&
+              dir !== 0 &&
+              i + dir >= 0 &&
+              i + dir < cols &&
+              isEmpty(grid[i + dir][j])
+            ) {
+              nextGrid[i + dir][j] = fadedCell;
+            } else {
+              nextGrid[i][j] = fadedCell;
+            }
         }
       }
     }
