@@ -11,14 +11,30 @@ let currentFreq = 0;
 
 // User input,
 let inputMode = "pour"; 
-let brushSize = 5;//make brushsize as the globa variable
+let brushSize = 5; // make brushsize as the global variable
+let paintDuration = 120000; // 2 minutes in milliseconds
+let paintingActive = true;
+let startTime = 0;
+let timerEnded = false;
+
+function emptyCell() {
+  return { hue: 0, sat: 0, bri: 0 };
+}
+
+function copyCell(cell) {
+  return { hue: cell.hue, sat: cell.sat, bri: cell.bri };
+}
+
+function isEmpty(cell) {
+  return cell.bri === 0;
+}
 
 function make2DArray(cols, rows){
   let arr = new Array(cols);
-  for (let i = 0;  i < arr.length; i++){
+  for (let i = 0;  i < cols; i++){
     arr[i] = new Array(rows);
-    for (let j = 0; j < arr[i].length; j++){
-      arr[i][j] = 0;
+    for (let j = 0; j < rows; j++){
+      arr[i][j] = emptyCell();
     }
   }
   return arr;
@@ -32,6 +48,9 @@ function setup() {
   cols = floor(width / w);
   rows = floor(height / w);
   grid = make2DArray(cols, rows);
+  startTime = millis();
+  paintingActive = true;
+  timerEnded = false;
 
   mic = new p5.AudioIn();
   mic.start();
@@ -50,6 +69,9 @@ function mousePressed() {
 }
 
 function usersTool(x ,y){ // To run different interaction
+  if (!paintingActive) {
+    return;
+  }
   if (inputMode === "pour"){
     addSand(x ,y);
   }
@@ -83,7 +105,7 @@ function addSand(x, y) {
         currentRow >= 0 &&
         currentRow < rows
       ) {
-        grid[currentCol][currentRow] = currentHue;
+        grid[currentCol][currentRow] = { hue: currentHue, sat: 100, bri: 100 };
       }
     }
   }
@@ -108,7 +130,7 @@ function eraseSand(x, y){
       currentRow >= 0 &&
       currentRow < rows
     ){
-      grid[currentCol][currentRow] = 0;//Here is to change selected cell to 0 to remove the sand.
+        grid[currentCol][currentRow] = emptyCell(); //Here is to change selected cell to 0 to remove the sand.
       }
     }
   }
@@ -133,21 +155,21 @@ function disturbSand(x, y){
         currentCol < cols &&
         currentRow >= 0 &&
         currentRow < rows &&
-        grid[currentCol][currentRow] > 0
+        !isEmpty(grid[currentCol][currentRow])
       ){
-        let sandHue = grid[currentCol][currentRow];//:to save the color of sands before moving.
+        let sandCell = copyCell(grid[currentCol][currentRow]); // save the color and brightness of sands before moving.
         let newCol = currentCol + floor(random(-3, 4));
-        let newRow = currentRow + floor(random(-2, 3));//These steps is to slect nearby random grid position.
+        let newRow = currentRow + floor(random(-2, 3));//These steps is to select nearby random grid position.
 
-        if (//only moving if the new position is empty& valid.
+        if (//only moving if the new position is empty & valid.
           newCol >= 0 &&
           newCol < cols &&
           newRow >= 0 &&
           newRow < rows &&
-          grid[newCol][newRow] === 0
+          isEmpty(grid[newCol][newRow])
         ){
-          grid[currentCol][currentRow] = 0;
-          grid[newCol][newRow] = sandHue;
+          grid[currentCol][currentRow] = emptyCell();
+          grid[newCol][newRow] = sandCell;
         }
       }
     }
@@ -155,7 +177,14 @@ function disturbSand(x, y){
 }
 
 function draw() {
-  background(0, 120);
+  background(0, 0, 20);
+
+  let elapsed = millis() - startTime;
+  let remaining = max(0, paintDuration - elapsed);
+  if (paintingActive && remaining <= 0) {
+    paintingActive = false;
+    timerEnded = true;
+  }
 
   let spectrum = fft.analyze();
   let weightedSum = 0;
@@ -176,9 +205,9 @@ function draw() {
 
   for (let i = 0; i < cols; i++){
     for (let j = 0; j < rows; j++){
-      let sandHue = grid[i][j];
-      if (sandHue > 0){
-        fill(sandHue, 100, 100);
+      let sandCell = grid[i][j];
+      if (!isEmpty(sandCell)){
+        fill(sandCell.hue, sandCell.sat, sandCell.bri);
         let x = i * w;
         let y = j * w;
         square(x, y, w);
@@ -190,9 +219,11 @@ function draw() {
   for (let i = 0; i < cols; i++){
     for (let j = 0; j < rows; j++){
       let state = grid[i][j];
-      if (state > 0){
+      if (!isEmpty(state)){
         if (j >= rows - 1) {
-          nextGrid[i][j] = state;
+          nextGrid[i][j] = copyCell(state);
+          nextGrid[i][j].sat = max(nextGrid[i][j].sat - 0.033, 0);
+          nextGrid[i][j].bri = min(nextGrid[i][j].bri + 0.017, 90);
           continue;
         }
         
@@ -202,21 +233,27 @@ function draw() {
         let dir = wind > 0.5 ? 1 : -1;
         if (random(1) < 0.1) dir = random(1) < 0.5 ? 1 : -1;
 
-        let belowA, belowB;
+        let belowA = emptyCell();
+        let belowB = emptyCell();
         if (i + dir >= 0 && i + dir <= cols - 1){
           belowA = grid[i + dir][j + 1];
         }
         if (i - dir >= 0 && i - dir <= cols - 1){
           belowB = grid[i - dir][j + 1];
         }
-        if (below === 0){
-          nextGrid[i][j + 1] = state;
-        } else if (belowA === 0) {
-          nextGrid[i + dir][j + 1] = state;
-        } else if (belowB === 0) {
-          nextGrid[i - dir][j + 1] = state;
+
+        let fadedCell = copyCell(state);
+        fadedCell.sat = max(fadedCell.sat - 0.033, 0);
+        fadedCell.bri = min(fadedCell.bri + 0.017, 90);
+
+        if (isEmpty(below)){
+          nextGrid[i][j + 1] = fadedCell;
+        } else if (isEmpty(belowA)) {
+          nextGrid[i + dir][j + 1] = fadedCell;
+        } else if (isEmpty(belowB)) {
+          nextGrid[i - dir][j + 1] = fadedCell;
         } else {
-          nextGrid[i][j] = state;
+          nextGrid[i][j] = fadedCell;
         }
       }
     }
@@ -224,22 +261,29 @@ function draw() {
     grid = nextGrid;
     noiseStep += 0.01;
 
-    drawInputInstructions();
+    drawInputInstructions(remaining);
     drawBrushPreview();
 
 }
 
-function drawInputInstructions() {
+function drawInputInstructions(remaining) {
+  if (!paintingActive) {
+    remaining = 0;
+  }
   fill(255);
   noStroke();
   textSize(12);
-  text("Mode: " + inputMode, 20, 30);
-  text("Brush size: " + brushSize, 20, 50);
-  text("1: Pour | 2: Disturb | 3: Erase", 20, 70);
-  text("Drag slowly for fine sand, quickly for heavier sand", 20, 90);
-  text("Use + / - to change base brush size", 20, 110);
-  text("Voice Frequency: " + floor(currentFreq) + " Hz", 20, 130);
-  text("Current Hue: " + floor(currentHue), 20, 150);
+  text("Time left: " + nf(floor(remaining / 60000), 1) + ":" + nf(floor((remaining % 60000) / 1000), 2), 20, 30);
+  if (!paintingActive) {
+    text("PAINTING ENDED", 20, 50);
+    text("Press R to restart from zero", 20, 70);
+  }
+  text("Mode: " + inputMode, 20, 90);
+  text("Brush size: " + brushSize, 20, 110);
+  text("1: Pour | 2: Disturb | 3: Erase", 20, 130);
+  text("SPACE: end painting early", 20, 150);
+  text("Voice Frequency: " + floor(currentFreq) + " Hz", 20, 170);
+  text("Current Hue: " + floor(currentHue), 20, 190);
 }
 
 function drawBrushPreview() {
@@ -273,14 +317,22 @@ function keyPressed() {
     brushSize = min(brushSize + 1, 20);
   } else if (key === '-') {
     brushSize = max(brushSize - 1, 1);
+  } else if (key === ' ' || keyCode === 32) {
+    paintingActive = false;
+    timerEnded = true;
   }
-  //Switch interaction modes:
+  // Switch interaction modes:
   if (key === "1"){
     inputMode = "pour";
   } else if (key === "2"){
     inputMode = "disturb";
   } else if (key === "3"){
     inputMode = "erase";
+  } else if (key === 'r' || key === 'R') {
+    startTime = millis();
+    paintingActive = true;
+    timerEnded = false;
+    grid = make2DArray(cols, rows);
   }
 }
 
@@ -294,7 +346,7 @@ function windowResized(){
   grid = make2DArray(cols, rows);
   for (let i = 0; i < min(oldCols, cols); i++){
     for (let j = 0; j < min(oldRows, rows); j++){
-      grid[i][j] = oldGrid[i][j];
+      grid[i][j] = copyCell(oldGrid[i][j]);
     }
   }
 }
