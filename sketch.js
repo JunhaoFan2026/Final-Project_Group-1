@@ -191,6 +191,7 @@ function draw() {
 
   if (paintingActive && remaining <= 0) {
     endPainting();
+    triggerExplosion();
   }
 
   drawTimeBasedBackground(elapsed);
