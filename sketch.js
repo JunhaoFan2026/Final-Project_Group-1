@@ -1,5 +1,5 @@
 let grid;
-let w = 6;//Trying to let larger grid cells to reduce the number of cells and improve performance.
+let w = 4;//Trying to let larger grid cells to reduce the number of cells and improve performance.
 let cols, rows;
 let noiseStep = 0;
 
@@ -54,7 +54,7 @@ function setup() {
   colorMode(HSB, 360, 100, 100);
   randomSeed(9103);
   noiseSeed(9103);
-  frameRate(30); // 30 FPS is smooth enough for this artwork and helps reduce performance pressure.
+  
   cols = floor(width / w);
   rows = floor(height / w);
   grid = make2DArray(cols, rows);
@@ -362,7 +362,7 @@ function triggerExplosion() {
         let x = i * w;
         let y = j * w;
 
-      if (particles.length < 3000) {
+      
         //Still to reduce the pressure:
         //Limit the number of explosion particles so the final effect does not slow down the sketch.
         particles.push({
@@ -373,7 +373,7 @@ function triggerExplosion() {
           hue: cell.hue,
           life: 255
         });
-      }
+      
 
         grid[i][j] = emptyCell();
       }
