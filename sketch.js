@@ -323,12 +323,13 @@ function drawInputInstructions(remaining) {
     text("PAINTING ENDED", 20, 50);
     text("Press R to restart from zero", 20, 70);
   }
-  text("Mode: " + inputMode, 20, 90);
-  text("Brush size: " + brushSize, 20, 110);
-  text("1: Pour | 2: Disturb | 3: Erase", 20, 130);
-  text("SPACE: end painting early", 20, 150);
-  text("Voice Frequency: " + floor(currentFreq) + " Hz", 20, 170);
-  text("Current Hue: " + floor(currentHue), 20, 190);
+  text("Mode: " + inputMode, 20, 100);
+  text("Brush size: " + brushSize, 20, 120);
+  text("1: Pour | 2: Disturb | 3: Erase", 20, 140);
+  text("+ / -: change brush size", 20, 160);
+  text("SPACE: end painting early | F: explode | R: restart", 20, 180);
+  text("Voice Frequency: " + floor(currentFreq) + " Hz", 20, 200);
+  text("Current Hue: " + floor(currentHue), 20, 220);
 }
 
 function triggerExplosion() {
@@ -385,7 +386,7 @@ function drawBrushPreview() {
   circle(mouseX, mouseY, previewBrushSize * w);
 }
 
-//Keyboard control:
+//User input:keyboard control:
 function keyPressed() {
   if (key === '+' || key === '=') {
     brushSize = min(brushSize + 1, 20);
@@ -408,6 +409,8 @@ function keyPressed() {
     startTime = millis();
     paintingActive = true;
     timerEnded = false;
+    explodeMode = false;
+    particles = [];
     grid = make2DArray(cols, rows);
   }
 }
