@@ -238,17 +238,17 @@ function draw() {
         
         let below = grid[i][j + 1];
 
-        let heightFactor = map(j, 0, rows, 1.5, 0.3);
+        let heightFactor = map(j, 0, rows, 1.2, 0.8);
 
         let wind = noise(i * 0.03, j * 0.03, noiseStep);
 
-        wind *= heightFactor;
+        wind = (wind - 0.5) *heightFactor;
 
         let dir = 0;
 
-        if (wind > 0.55){
+        if (wind > 0.08){
           dir = 1;
-        } else if (wind < 0.45){
+        } else if (wind < -0.08){
           dir = -1;
         }
 
@@ -265,7 +265,7 @@ function draw() {
         fadedCell.sat = max(fadedCell.sat - 0.033, 0);
         fadedCell.bri = min(fadedCell.bri + 0.017, 90);
 
-        if (isEmpty(below)){
+        if (isEmpty(below) && random(1) < 0.95){
           nextGrid[i][j + 1] = fadedCell;
         } else if (isEmpty(belowA)) {
           nextGrid[i + dir][j + 1] = fadedCell;
@@ -288,7 +288,7 @@ function draw() {
     }
   }
     grid = nextGrid;
-    noiseStep += 0.003;
+    noiseStep += 0.008;
 
     drawInputInstructions(remaining);
     drawBrushPreview();
