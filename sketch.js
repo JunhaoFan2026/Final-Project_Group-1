@@ -8,6 +8,9 @@ let fft;
 let currentHue = 180;
 let targetHue = 180;
 let currentFreq = 0;
+let bgImage;
+let paintingEndTime = 0;
+let bgTextureAlpha = 0;
 let particles = [];
 let explodeMode = false;
 
@@ -40,6 +43,10 @@ function make2DArray(cols, rows){
     }
   }
   return arr;
+}
+
+function preload() {
+  bgImage = loadImage('assets/sand-background.jpg');
 }
 
 function setup() {
@@ -179,14 +186,14 @@ function disturbSand(x, y){
 }
 
 function draw() {
-  background(0, 0, 10, 0.12);
-
   let elapsed = millis() - startTime;
   let remaining = max(0, paintDuration - elapsed);
+
   if (paintingActive && remaining <= 0) {
-    paintingActive = false;
-    timerEnded = true;
+    endPainting();
   }
+
+  drawTimeBasedBackground(elapsed);
 
   let spectrum = fft.analyze();
   let weightedSum = 0;
@@ -288,8 +295,7 @@ function draw() {
 
     if (explodeMode) {
 
-      background(0, 0, 10, 0.2);
-
+      // Draw explosion particles on top without clearing the background
       for (let i = particles.length - 1; i >= 0; i--) {
 
         let p = particles[i];
@@ -309,6 +315,14 @@ function draw() {
       }
     }
 
+}
+
+function endPainting() {
+  if (paintingActive) {
+    paintingActive = false;
+    timerEnded = true;
+    paintingEndTime = millis();
+  }
 }
 
 function drawInputInstructions(remaining) {
@@ -393,8 +407,7 @@ function keyPressed() {
   } else if (key === '-') {
     brushSize = max(brushSize - 1, 1);
   } else if (key === ' ' || keyCode === 32) {
-    paintingActive = false;
-    timerEnded = true;
+    endPainting();
   }
   // Switch interaction modes:
   if (key === "1"){
@@ -404,15 +417,96 @@ function keyPressed() {
   } else if (key === "3"){
     inputMode = "erase";
   } else if (key === 'f' || key === 'F') {
+    // trigger visual explosion and force background to full reveal
     triggerExplosion();
+    endPainting();
+    // pretend 25s have passed since end so afterEndReveal -> 1
+    paintingEndTime = millis() - 25000;
   } else if (key === 'r' || key === 'R') {
     startTime = millis();
+    paintingEndTime = 0;
     paintingActive = true;
     timerEnded = false;
+    bgTextureAlpha = 0;
     explodeMode = false;
     particles = [];
     grid = make2DArray(cols, rows);
   }
+}
+
+function drawTimeBasedBackground(elapsed) {
+  // base dark background to keep sand readable; will be layered over by image
+  background(0, 0, 10, 0.12);
+
+  if (!bgImage) return;
+
+  // progress of the painting build [0..1]
+  let buildProgress = constrain(elapsed / paintDuration, 0, 1);
+  // start revealing later and ease in
+  let buildReveal = smoothStep(0.25, 1.0, buildProgress);
+
+  // after painting ends, the texture continues to reveal over ~25s
+  let afterEndReveal = 0;
+  if (!paintingActive && paintingEndTime > 0) {
+    afterEndReveal = constrain((millis() - paintingEndTime) / 25000, 0, 1);
+    afterEndReveal = easeOut(afterEndReveal);
+  }
+
+  // make initial image nearly invisible, but increase reveal strength so it's more obvious
+  // base is lower (darker start), buildReveal and afterEndReveal have larger multipliers
+  bgTextureAlpha = 0.02 + buildReveal * 0.20 + afterEndReveal * 0.40;
+
+  // draw image with calculated alpha
+  push();
+  drawingContext.save();
+  drawingContext.globalAlpha = bgTextureAlpha;
+  imageCover(bgImage, 0, 0, width, height);
+  drawingContext.restore();
+  pop();
+
+  // dark wash that fades as the image reveals to make the reveal more noticeable
+  let washProgress = paintingActive ? buildReveal : afterEndReveal;
+  let maxWash = paintingActive ? 0.14 : 0.06; // slightly stronger while painting
+  let washAlpha = maxWash * (1 - washProgress);
+  washAlpha = constrain(washAlpha, 0, maxWash);
+
+  push();
+  drawingContext.save();
+  drawingContext.globalAlpha = washAlpha;
+  noStroke();
+  fill(0, 0, 0);
+  rect(0, 0, width, height);
+  drawingContext.restore();
+  pop();
+}
+
+function imageCover(img, x, y, w, h) {
+  let imgRatio = img.width / img.height;
+  let canvasRatio = w / h;
+
+  let sx = 0;
+  let sy = 0;
+  let sw = img.width;
+  let sh = img.height;
+
+  if (imgRatio > canvasRatio) {
+    sw = sh * canvasRatio;
+    sx = (img.width - sw) / 2;
+  } else {
+    sh = sw / canvasRatio;
+    sy = (img.height - sh) / 2;
+  }
+
+  image(img, x, y, w, h, sx, sy, sw, sh);
+}
+
+function smoothStep(edge0, edge1, x) {
+  let t = constrain((x - edge0) / (edge1 - edge0), 0, 1);
+  return t * t * (3 - 2 * t);
+}
+
+function easeOut(t) {
+  return 1 - pow(1 - t, 3);
 }
 
 function windowResized(){
