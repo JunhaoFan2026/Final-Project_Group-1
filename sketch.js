@@ -50,7 +50,7 @@ function preload() {
 }
 
 function setup() {
-  createCanvas(min(windowWidth, 900), min(windowHeight, 800)); //To reduce lags by limit canvas size to avoid creating an overly large grid.
+  createCanvas(windowWidth, windowHeight); 
   colorMode(HSB, 360, 100, 100);
   randomSeed(9103);
   noiseSeed(9103);
@@ -519,8 +519,7 @@ function windowResized(){
   let oldGrid = grid;
   let oldCols = cols;
   let oldRows = rows;
-  resizeCanvas(min(windowWidth, 900), min(windowHeight, 800));
-// Keep the resized canvas capped as well, so the grid does not become too large.
+  resizeCanvas(windowWidth, windowHeight);
   cols = floor(width / w);
   rows = floor(height / w);
   grid = make2DArray(cols, rows);
