@@ -1,5 +1,5 @@
 let grid;
-let w = 4;
+let w = 6;//Trying to let larger grid cells to reduce the number of cells and improve performance.
 let cols, rows;
 let noiseStep = 0;
 
@@ -50,10 +50,11 @@ function preload() {
 }
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
+  createCanvas(min(windowWidth, 900), min(windowHeight, 800)); //To reduce lags by limit canvas size to avoid creating an overly large grid.
   colorMode(HSB, 360, 100, 100);
   randomSeed(9103);
   noiseSeed(9103);
+  frameRate(30); // 30 FPS is smooth enough for this artwork and helps reduce performance pressure.
   cols = floor(width / w);
   rows = floor(height / w);
   grid = make2DArray(cols, rows);
@@ -88,8 +89,8 @@ function usersTool(x ,y){ // To run different interaction
     disturbSand(x ,y);
   }
   else if (inputMode === "erase"){
-      eraseSand(x ,y);
-    }
+    eraseSand(x ,y);
+  }
 }
 
 //Pour tool: Slow mouse movement creates a finer sand stream, fast mouse movement increase poring area.
@@ -361,6 +362,9 @@ function triggerExplosion() {
         let x = i * w;
         let y = j * w;
 
+      if (particles.length < 3000) {
+        //Still to reduce the pressure:
+        //Limit the number of explosion particles so the final effect does not slow down the sketch.
         particles.push({
           x: x,
           y: y,
@@ -369,6 +373,7 @@ function triggerExplosion() {
           hue: cell.hue,
           life: 255
         });
+      }
 
         grid[i][j] = emptyCell();
       }
@@ -514,7 +519,8 @@ function windowResized(){
   let oldGrid = grid;
   let oldCols = cols;
   let oldRows = rows;
-  resizeCanvas(windowWidth, windowHeight);
+  resizeCanvas(min(windowWidth, 900), min(windowHeight, 800));
+// Keep the resized canvas capped as well, so the grid does not become too large.
   cols = floor(width / w);
   rows = floor(height / w);
   grid = make2DArray(cols, rows);
