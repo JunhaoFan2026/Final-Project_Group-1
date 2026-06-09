@@ -2,6 +2,9 @@
  * AUDIO MECHANIC
  * Creative Director: Drives color/hue based on audio frequency content
  * Uses the level or frequency content of an audio track to drive color changes
+ * This system is inspired by The Coding Train tutorials:
+// https://thecodingtrain.com/tracks/sound/sound/8-microphone-input
+// https://thecodingtrain.com/tracks/sound/sound/11-sound-visualization-frequency-analysis
  */
 
 let mic;

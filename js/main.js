@@ -2,6 +2,8 @@
  * MAIN SKETCH
  * Orchestrates all mechanics: Audio, Time, Perlin Noise, and User Input
  * Combines all four creative mechanics into a cohesive sand drawing experience
+ * * This system is inspired by The Coding Train tutorials:
+// https://thecodingtrain.com/challenges/180-falling-sand/
  */
 
 let grid;
