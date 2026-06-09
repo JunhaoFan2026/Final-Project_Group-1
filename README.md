@@ -1,6 +1,6 @@
 # Final-Project_Group-1
 # Dissolving Sandscape
-
+**GitHub Repository:** [Final Project Group 1](https://github.com/JunhaoFan2026/Final-Project_Group-1)
 > The user can create, but cannot keep it.
 ## Project Overview
 
