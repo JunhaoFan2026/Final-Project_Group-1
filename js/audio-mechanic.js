@@ -21,7 +21,8 @@ function updateAudioColors() {
   let spectrum = fft.analyze();
   let weightedSum = 0;
   let totalEnergy = 0;
-  
+
+    // Calculate spectral centroid from frequency data
   for (let i = 0; i < spectrum.length; i++){
     weightedSum += i * spectrum[i];
     totalEnergy += spectrum[i];
@@ -29,10 +30,14 @@ function updateAudioColors() {
   
   if (totalEnergy > 0){
     let centroid = weightedSum / totalEnergy;
+
+    // Convert frequency to colour (HSB hue)
     let nyquist = sampleRate() / 2;
     let centroidFreq = centroid * nyquist / spectrum.length;
     currentFreq = centroidFreq;
     targetHue = map(centroidFreq, 180, 500, 1, 360, true);
+
+    // Smooth colour transitions
     currentHue = lerp(currentHue, targetHue, 0.05);
   }
 }
